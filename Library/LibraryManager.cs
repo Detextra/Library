@@ -10,6 +10,13 @@ namespace Library
 {
     public class LibraryManager
     {
+        public const int StudentMaxDaysLoanDuration = 28;
+        public const int StudentMaxLoans = 5;
+
+        public const int StandardMaxDaysLoanDuration = 21;
+        public const int StandardMaxLoans = 3;
+
+
         private Dictionary<int, Member> _listMembers;
         private int _nextMemberId = 1;
         private Dictionary<int, Book> _listBooks;
@@ -21,6 +28,7 @@ namespace Library
         {
             _listMembers = new Dictionary<int, Member>();
             _listBooks = new Dictionary<int, Book>();
+            _listLoans = new Dictionary<int, Loan>();
         }
 
         public bool AddMember (bool IsMemberStudent)
@@ -28,7 +36,19 @@ namespace Library
             lock (_listMembers)
             {
                 int uniqueId = _nextMemberId++;
-                Member newMember = new Member(uniqueId, IsMemberStudent);
+                Member newMember = new Member(uniqueId, IsMemberStudent, 0);
+                _listMembers.Add(uniqueId, newMember);
+                return true;
+            }
+            return false;
+        }
+
+        public bool AddMember(bool IsMemberStudent, double balance)
+        {
+            lock (_listMembers)
+            {
+                int uniqueId = _nextMemberId++;
+                Member newMember = new Member(uniqueId, IsMemberStudent, balance);
                 _listMembers.Add(uniqueId, newMember);
                 return true;
             }
@@ -86,9 +106,11 @@ namespace Library
                 b.NumberOfCopiesAvailable += increase;
                 return true;
             }
-            return bool;
+            return false;
         }
 
+
+        // todo check if max loan is reached
         public Loan MakeLoan(int bookId, int memberId)
         {
             if (_listBooks.TryGetValue(bookId, out Book book) && book.NumberOfCopiesAvailable > 0)
@@ -98,17 +120,43 @@ namespace Library
                     int uniqueId = _nextLoanId++;
                     Loan newLoan = new Loan(uniqueId, DateTime.Now, memberId, bookId);
                     _listLoans.Add(uniqueId, newLoan);
+                    return newLoan;
                 }
             }
             return null;
         }
 
         // does member make and return a loan on its page?
+
+        // do only 1 lock, loan not found, member not found, deter
         public bool ReturnLoan (int loanId)
         {
-            lock (_listBooks)
+            lock (_listLoans)
             {
-                _listBooks.Remove(loanId);
+                // manage l is null
+                _listLoans.TryGetValue(loanId, out Loan l);
+                int loanDaysDuration = (DateTime.Now - l.LoanStartDate).Days;
+
+                _listMembers.TryGetValue(l.MemberId, out Member memberOfLoan);
+
+                // determine loanduration based of bool isStudent 
+                if (memberOfLoan.IsMemberStudent && loanDaysDuration > StudentMaxDaysLoanDuration)
+                {
+                    double penalty = (StudentMaxDaysLoanDuration - loanDaysDuration) * -0.1;
+                    lock (_listMembers)
+                    {
+                        memberOfLoan.Balance += penalty;
+                    }
+                }
+                else (loanDaysDuration > StandardMaxDaysLoanDuration)
+                {
+                    double penalty = (StandardMaxDaysLoanDuration - loanDaysDuration) * 0.1;
+                    lock (_listMembers)
+                    {
+                        memberOfLoan.Balance += penalty;
+                    }
+                }
+                _listBooks.Remove(l.LoanId);
                 return true;
             }
             return false;
@@ -123,6 +171,12 @@ namespace Library
                     loans.Add(l);
             }
             return loans;
+        }
+
+        // for command test line only
+        public Member GetMember ()
+        {
+            return _listMembers.FirstOrDefault().Value;
         }
     }
 }

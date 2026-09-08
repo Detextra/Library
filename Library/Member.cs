@@ -10,28 +10,14 @@ namespace Library
     {
         public int MemberId;
         public bool IsMemberStudent;
-        private LoanController loanController;
+        public double Balance;
 
-        public Member (int MemberId, bool IsMemberStudent)
+        public Member (int MemberId, bool IsMemberStudent, double balance)
         {
             this.MemberId = MemberId;
             this.IsMemberStudent = IsMemberStudent;
+            this.Balance = balance;
         }
 
-        public List<Loan> GetLoans()
-        {
-            return loanController.GetLoans(this.MemberId);
-        }
-
-        public bool MakeLoan (int bookId)
-        {
-            Loan newLoan = loanController.MakeLoan(bookId, MemberId);
-            if ( newLoan != null)
-            {
-                Loans.Add(newLoan.LoanId, newLoan);
-                return true; 
-            }
-            return false;
-        }
     }
 }

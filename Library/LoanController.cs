@@ -15,9 +15,9 @@ namespace Library
             this.librairyManager = librairyManager;
         }
 
-        public Loan MakeLoan (int loanId, int memberId)
+        public Loan MakeLoan (int bookId, int memberId)
         {
-            return librairyManager.MakeLoan(loanId, memberId);
+            return librairyManager.MakeLoan(bookId, memberId);
         }
 
         public List<Loan> GetLoans (int memberId)
