@@ -8,17 +8,17 @@ namespace Library
 {
     public class Book
     {
-        public int IdBook;
+        public int BookId;
         public string Title;
         public string Author;
-        public int NumberOfCopies;
+        public int NumberOfCopiesAvailable;
 
-        public Book(int IdBook, string Title, string Author, int NumberOfCopies)
+        public Book(int BookId, string Title, string Author, int NumberOfCopiesAvailable)
         {
-            this.IdBook = IdBook;
+            this.BookId = BookId;
             this.Title = Title;
             this.Author = Author;
-            this.NumberOfCopies = NumberOfCopies;
+            this.NumberOfCopiesAvailable = NumberOfCopiesAvailable;
         }
     }
 }

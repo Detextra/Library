@@ -8,8 +8,17 @@ namespace Library
 {
     public class LoanController
     {
-        public LoanManager LoanManager { get; set; }
-    }
+        private LoanManager loanManager { get; set; }
 
+        public LoanController(LoanManager loanManager)
+        {
+            this.loanManager = loanManager;
+        }
+
+        public Loan MakeLoan (int loanId, int memberId)
+        {
+            return loanManager.MakeLoan(loanId, memberId);
+        }
+    }
 
 }

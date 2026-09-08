@@ -8,14 +8,32 @@ namespace Library
 {
     public class Member
     {
-        public int IdMember;
-        public Boolean IsMemberStudent;
-        public 
+        public int MemberId;
+        public bool IsMemberStudent;
+        public Dictionary<int, Loan> Loans;
+        private LoanController loanController;
 
-        Member(int IdMember, Boolean IsMemberStudent)
+        Member(int MemberId, bool IsMemberStudent, LoanController loanController)
         {
-            this.IdMember = IdMember;
+            this.MemberId = MemberId;
             this.IsMemberStudent = IsMemberStudent;
+            this.loanController = loanController;
+        }
+
+        public Dictionary<int, Loan> GetLoans()
+        {
+            return Loans;
+        }
+
+        public bool MakeLoan (int bookId)
+        {
+            Loan newLoan = loanController.MakeLoan(bookId, MemberId);
+            if ( newLoan != null)
+            {
+                Loans.Add(newLoan.LoanId, newLoan);
+                return true; 
+            }
+            return false;}
         }
     }
 }
