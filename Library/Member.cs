@@ -10,19 +10,17 @@ namespace Library
     {
         public int MemberId;
         public bool IsMemberStudent;
-        public Dictionary<int, Loan> Loans;
         private LoanController loanController;
 
-        Member(int MemberId, bool IsMemberStudent, LoanController loanController)
+        public Member (int MemberId, bool IsMemberStudent)
         {
             this.MemberId = MemberId;
             this.IsMemberStudent = IsMemberStudent;
-            this.loanController = loanController;
         }
 
-        public Dictionary<int, Loan> GetLoans()
+        public List<Loan> GetLoans()
         {
-            return Loans;
+            return loanController.GetLoans(this.MemberId);
         }
 
         public bool MakeLoan (int bookId)
@@ -33,7 +31,7 @@ namespace Library
                 Loans.Add(newLoan.LoanId, newLoan);
                 return true; 
             }
-            return false;}
+            return false;
         }
     }
 }

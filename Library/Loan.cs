@@ -10,14 +10,14 @@ namespace Library
     {
         public int LoanId { get; set; }
         public DateTime LoanStartDate { get; set; }
-        public int Memberid { get; set; }
+        public int MemberId { get; set; }
         public int BookId { get; set; }
 
-        public Loan (int LoanId, DateTime loanStartDate, int memberid, int bookId)
+        public Loan (int LoanId, DateTime loanStartDate, int memberId, int bookId)
         {
             LoanId = LoanId;
             LoanStartDate = loanStartDate;
-            Memberid = memberid;
+            MemberId = memberId;
             BookId = bookId;
         }
     }
