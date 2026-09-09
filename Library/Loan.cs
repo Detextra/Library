@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Library
+﻿namespace Library
 {
     public class Loan
     {
@@ -13,9 +7,9 @@ namespace Library
         public int MemberId { get; set; }
         public int BookId { get; set; }
 
-        public Loan (int LoanId, DateTime loanStartDate, int memberId, int bookId)
+        public Loan (int loanId, DateTime loanStartDate, int memberId, int bookId)
         {
-            LoanId = LoanId;
+            LoanId = loanId;
             LoanStartDate = loanStartDate;
             MemberId = memberId;
             BookId = bookId;

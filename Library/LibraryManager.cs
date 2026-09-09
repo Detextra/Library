@@ -1,9 +1,5 @@
 ﻿using Library;
-using System;
 using System.Collections.Concurrent;
-using System.Threading;
-using Microsoft.AspNetCore.Mvc;
-
 public class LibraryManager
 {
     private readonly ConcurrentDictionary<int, Book> _listBooks = new();
