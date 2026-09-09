@@ -2,17 +2,22 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using Microsoft.AspNetCore.Mvc;
 
 public class LibraryManager
 {
     private readonly ConcurrentDictionary<int, Book> _listBooks = new();
+    private int _nextBookId = 1;
     private readonly ConcurrentDictionary<int, Loan> _listLoans = new();
+    private int _nextLoanId = 1;
     private readonly ConcurrentDictionary<int, Member> _listMembers = new();
+    private int _nextMemberId = 1;
 
-    private int _nextLoanId = 0;
+    public const int StudentMaxDaysLoanDuration = 28;
+    public const int StudentMaxLoans = 5;
 
-    public int StudentMaxDaysLoanDuration { get; set; } = 14;
-    public int StandardMaxDaysLoanDuration { get; set; } = 7;
+    public const int StandardMaxDaysLoanDuration = 21;
+    public const int StandardMaxLoans = 3;
 
     public Loan MakeLoan(int bookId, int memberId)
     {
@@ -32,18 +37,30 @@ public class LibraryManager
             book.NumberOfCopiesAvailable--;
         }
 
-        int uniqueId = Interlocked.Increment(ref _nextLoanId);
-
-        Loan newLoan = new Loan(uniqueId, DateTime.Now, memberId, bookId);
-
-        if (_listLoans.TryAdd(uniqueId, newLoan))
+        if (_listMembers.TryGetValue(memberId, out Member member))
         {
-            return newLoan;
-        }
+            int maxAllowedLoans = member.IsMemberStudent
+                ? StudentMaxLoans
+                : StandardMaxLoans;
 
-        lock (book)
-        {
-            book.NumberOfCopiesAvailable++;
+            if (GetLoans(memberId).Count >= maxAllowedLoans)
+            {
+                return null;
+            }
+
+            int uniqueId = Interlocked.Increment(ref _nextLoanId);
+
+            Loan newLoan = new Loan(uniqueId, DateTime.Now, memberId, bookId);
+
+            if (_listLoans.TryAdd(uniqueId, newLoan))
+            {
+                return newLoan;
+            }
+
+            lock (book)
+            {
+                book.NumberOfCopiesAvailable--;
+            }  
         }
 
         return null;
@@ -98,5 +115,15 @@ public class LibraryManager
             }
         }
         return loans;
+    }
+
+    public double GetBalance(int memberId)
+    {
+        foreach (Member m in _listMembers.Values)
+        {
+            if (m.MemberId == memberId)
+                return m.Balance;
+        }
+        return 0;
     }
 }

@@ -24,6 +24,11 @@ namespace Library
         {
              return librairyManager.GetLoans(memberId);
         }
+
+        public double GetBalance(int memberId)
+        {
+            return librairyManager.GetBalance(memberId);
+        }
     }
 
 }
