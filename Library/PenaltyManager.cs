@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Library
+﻿namespace Library
 {
     internal class PenaltyManager
     {
@@ -32,7 +25,9 @@ namespace Library
                 return; 
             lock (member) 
             { 
-                member.Balance = Math.Max(10m, member.Balance + penaltyDays * 0.20m);
+                member.Balance += penaltyDays * 0.20m;
+                if (member.Balance > 10)
+                    member.Balance = 10;
             }
         }
     }

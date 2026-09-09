@@ -19,7 +19,7 @@
              return librairyManager.GetLoans(memberId);
         }
 
-        public double GetBalance(int memberId)
+        public decimal GetBalance(int memberId)
         {
             return librairyManager.GetBalance(memberId);
         }
