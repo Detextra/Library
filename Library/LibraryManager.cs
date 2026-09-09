@@ -1,182 +1,102 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Library;
+using System;
+using System.Collections.Concurrent;
+using System.Threading;
 
-namespace Library
+public class LibraryManager
 {
-    public class LibraryManager
+    private readonly ConcurrentDictionary<int, Book> _listBooks = new();
+    private readonly ConcurrentDictionary<int, Loan> _listLoans = new();
+    private readonly ConcurrentDictionary<int, Member> _listMembers = new();
+
+    private int _nextLoanId = 0;
+
+    public int StudentMaxDaysLoanDuration { get; set; } = 14;
+    public int StandardMaxDaysLoanDuration { get; set; } = 7;
+
+    public Loan MakeLoan(int bookId, int memberId)
     {
-        public const int StudentMaxDaysLoanDuration = 28;
-        public const int StudentMaxLoans = 5;
-
-        public const int StandardMaxDaysLoanDuration = 21;
-        public const int StandardMaxLoans = 3;
-
-
-        private Dictionary<int, Member> _listMembers;
-        private int _nextMemberId = 1;
-        private Dictionary<int, Book> _listBooks;
-        private int _nextBookId = 1;
-        private Dictionary<int, Loan> _listLoans;
-        private int _nextLoanId = 1;
-
-        public LibraryManager()
+        if (!_listBooks.TryGetValue(bookId, out Book book) ||
+            !_listMembers.ContainsKey(memberId))
         {
-            _listMembers = new Dictionary<int, Member>();
-            _listBooks = new Dictionary<int, Book>();
-            _listLoans = new Dictionary<int, Loan>();
-        }
-
-        public bool AddMember (bool IsMemberStudent)
-        {
-            lock (_listMembers)
-            {
-                int uniqueId = _nextMemberId++;
-                Member newMember = new Member(uniqueId, IsMemberStudent, 0);
-                _listMembers.Add(uniqueId, newMember);
-                return true;
-            }
-            return false;
-        }
-
-        public bool AddMember(bool IsMemberStudent, double balance)
-        {
-            lock (_listMembers)
-            {
-                int uniqueId = _nextMemberId++;
-                Member newMember = new Member(uniqueId, IsMemberStudent, balance);
-                _listMembers.Add(uniqueId, newMember);
-                return true;
-            }
-            return false;
-        }
-
-        public bool RemoveMember (int MemberId)
-        {
-            lock (_listMembers)
-            {
-                _listMembers.Remove(MemberId);
-                return true;
-            }
-            return false;
-        }
-
-        public bool ChangeMemberType(int MemberId)
-        {
-            lock (_listMembers)
-            {
-                _listMembers.TryGetValue(MemberId, out Member m);
-                m.IsMemberStudent = !m.IsMemberStudent;
-                return true;
-            }
-            return false;
-        }
-
-        public bool AddBook(string title, string author, int numberOfCopiesAvailable)
-        {
-            lock (_listBooks)
-            {
-                int uniqueId = _nextBookId++;
-                Book newBook = new Book(uniqueId, title, author, numberOfCopiesAvailable);
-                _listBooks.Add(uniqueId, newBook);
-                return true;
-            }
-            return false;
-        }
-
-        public bool RemoveBook (int BookId)
-        {
-            lock (_listBooks)
-            {
-                _listBooks.Remove(BookId);
-                return true;
-            }
-            return false;
-        }
-
-        public bool AdjustBookCopies (int bookId, int increase)
-        {
-            lock (_listBooks)
-            {
-                _listBooks.TryGetValue(bookId, out Book b);
-                b.NumberOfCopiesAvailable += increase;
-                return true;
-            }
-            return false;
-        }
-
-
-        // todo check if max loan is reached
-        public Loan MakeLoan(int bookId, int memberId)
-        {
-            if (_listBooks.TryGetValue(bookId, out Book book) && book.NumberOfCopiesAvailable > 0)
-            {
-                lock (_listBooks)
-                {
-                    int uniqueId = _nextLoanId++;
-                    Loan newLoan = new Loan(uniqueId, DateTime.Now, memberId, bookId);
-                    _listLoans.Add(uniqueId, newLoan);
-                    return newLoan;
-                }
-            }
             return null;
         }
 
-        // does member make and return a loan on its page?
-
-        // do only 1 lock, loan not found, member not found, deter
-        public bool ReturnLoan (int loanId)
+        lock (book)
         {
-            lock (_listLoans)
+            if (book.NumberOfCopiesAvailable <= 0)
             {
-                // manage l is null
-                _listLoans.TryGetValue(loanId, out Loan l);
-                int loanDaysDuration = (DateTime.Now - l.LoanStartDate).Days;
-
-                _listMembers.TryGetValue(l.MemberId, out Member memberOfLoan);
-
-                // determine loanduration based of bool isStudent 
-                if (memberOfLoan.IsMemberStudent && loanDaysDuration > StudentMaxDaysLoanDuration)
-                {
-                    double penalty = (StudentMaxDaysLoanDuration - loanDaysDuration) * -0.1;
-                    lock (_listMembers)
-                    {
-                        memberOfLoan.Balance += penalty;
-                    }
-                }
-                else (loanDaysDuration > StandardMaxDaysLoanDuration)
-                {
-                    double penalty = (StandardMaxDaysLoanDuration - loanDaysDuration) * 0.1;
-                    lock (_listMembers)
-                    {
-                        memberOfLoan.Balance += penalty;
-                    }
-                }
-                _listBooks.Remove(l.LoanId);
-                return true;
+                return null;
             }
+
+            book.NumberOfCopiesAvailable--;
+        }
+
+        int uniqueId = Interlocked.Increment(ref _nextLoanId);
+
+        Loan newLoan = new Loan(uniqueId, DateTime.Now, memberId, bookId);
+
+        if (_listLoans.TryAdd(uniqueId, newLoan))
+        {
+            return newLoan;
+        }
+
+        lock (book)
+        {
+            book.NumberOfCopiesAvailable++;
+        }
+
+        return null;
+    }
+
+    public bool ReturnLoan(int loanId)
+    {
+        if (!_listLoans.TryRemove(loanId, out Loan loan))
+        {
             return false;
         }
 
-        public List<Loan> GetLoans (int memberId)
+        if (_listMembers.TryGetValue(loan.MemberId, out Member member))
         {
-            List<Loan> loans = new List<Loan>();
-            foreach( Loan l in _listLoans.Values)
+            int loanDaysDuration = (DateTime.Now - loan.LoanStartDate).Days;
+            int maxAllowedDays = member.IsMemberStudent
+                ? StudentMaxDaysLoanDuration
+                : StandardMaxDaysLoanDuration;
+
+            int overdueDays = loanDaysDuration - maxAllowedDays;
+
+            if (overdueDays > 0)
             {
-                if (l.MemberId == memberId)
-                    loans.Add(l);
+                double penalty = overdueDays * 0.10;
+
+                lock (member)
+                {
+                    member.Balance += penalty;
+                }
             }
-            return loans;
         }
 
-        // for command test line only
-        public Member GetMember ()
+        if (_listBooks.TryGetValue(loan.BookId, out Book book))
         {
-            return _listMembers.FirstOrDefault().Value;
+            lock (book)
+            {
+                book.NumberOfCopiesAvailable++;
+            }
         }
+
+        return true;
+    }
+
+    public List<Loan> GetLoans (int memberId)
+    {
+        List<Loan> loans = new List<Loan>();
+        foreach (Loan n in _listLoans.Values)
+        {
+            if (n.MemberId == memberId)
+            {
+                loans.Add(n);
+            }
+        }
+        return loans;
     }
 }
