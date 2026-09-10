@@ -12,25 +12,29 @@ public class LibraryManager
     public const int StudentMaxLoans = 5;
     public const int StandardMaxLoans = 3;
 
-    public Loan MakeLoan(int bookId, int memberId)
+    public Loan? MakeLoan(int bookId, int memberId)
     {
-        if (!_listMembers.TryGetValue(memberId, out Member member) ||
-            !_listBooks.TryGetValue(bookId, out Book book))
+        if (!_listMembers.TryGetValue(memberId, out var member))
         {
-            return null;
+            throw new EntityNotFoundException($"Member with ID {memberId} was not found.");
+        }
+
+        if (!_listBooks.TryGetValue(bookId, out var book))
+        {
+            throw new EntityNotFoundException($"Book with ID {bookId} was not found.");
         }
 
         int maxAllowedLoans = member.isStudent ? StudentMaxLoans : StandardMaxLoans;
         if (GetLoans(memberId).Count >= maxAllowedLoans)
         {
-            return null;
+            throw new LimitExceededException($"Member {memberId} has reached the maximum loan limit of {maxAllowedLoans}.");
         }
 
         lock (book)
         {
             if (book.NumberOfCopiesAvailable <= 0)
             {
-                return null;
+                throw new BookUnavailableException($"Book ID {bookId} ('{book.Title}') has no available copies.");
             }
             book.NumberOfCopiesAvailable--;
         }
@@ -48,30 +52,28 @@ public class LibraryManager
             book.NumberOfCopiesAvailable++;
         }
 
-        return null;
+        throw new InvalidOperationExceptionCustom($"Failed to create loan record for Book ID {bookId} and Member ID {memberId}.");
     }
 
-    public bool ReturnLoan(int loanId)
+    public void ReturnLoan(int loanId)
     {
-        if (!_listLoans.TryRemove(loanId, out Loan loan))
+        if (!_listLoans.TryRemove(loanId, out var loan))
         {
-            return false;
+            throw new EntityNotFoundException($"Loan with ID {loanId} was not found or has already been returned.");
         }
 
-        if (_listMembers.TryGetValue(loan.MemberId, out Member member))
+        if (_listMembers.TryGetValue(loan.MemberId, out var member))
         {
             PenaltyManager.ApplyPenalty(member, loan);
         }
 
-        if (_listBooks.TryGetValue(loan.BookId, out Book book))
+        if (_listBooks.TryGetValue(loan.BookId, out var book))
         {
             lock (book)
             {
                 book.NumberOfCopiesAvailable++;
             }
         }
-
-        return true;
     }
 
     public List<Loan> GetLoans (int memberId)
@@ -89,7 +91,7 @@ public class LibraryManager
 
     public decimal GetBalance(int memberId)
     {
-        if (_listMembers.TryGetValue(memberId, out Member member))
+        if (_listMembers.TryGetValue(memberId, out var member))
         {
             lock (member)
             {
@@ -107,25 +109,27 @@ public class LibraryManager
         return member;
     }
 
-    public bool RemoveMember(int memberId)
+    public void RemoveMember(int memberId)
     {
-        if (GetLoans(memberId).Count > 0)
+        if (!_listMembers.TryGetValue(memberId, out var member))
         {
-            return false;
+            throw new EntityNotFoundException($"Member with ID {memberId} was not found.");
         }
 
-        if (_listMembers.TryGetValue(memberId, out Member member))
+        if (GetLoans(memberId).Count > 0)
         {
-            lock (member)
+            throw new InvalidOperationExceptionCustom($"Cannot remove Member {memberId}: Member currently has active loans.");
+        }
+
+        lock (member)
+        {
+            if (member.Balance > 0)
             {
-                if (member.Balance > 0)
-                {
-                    return false;
-                }
+                throw new InvalidOperationExceptionCustom($"Cannot remove Member {memberId}: Member has an outstanding balance of {member.Balance:C}.");
             }
         }
 
-        return _listMembers.TryRemove(memberId, out _);
+        _listMembers.TryRemove(memberId, out _);
     }
 
     public Book AddBook(string title, string author, int copies)
@@ -136,16 +140,41 @@ public class LibraryManager
         return book;
     }
 
-    public bool RemoveBook(int bookId)
+    public void RemoveBook(int bookId)
     {
+        if (!_listBooks.ContainsKey(bookId))
+        {
+            throw new EntityNotFoundException($"Book with ID {bookId} was not found.");
+        }
+
         foreach (Loan loan in _listLoans.Values)
         {
             if (loan.BookId == bookId)
             {
-                return false;
+                throw new InvalidOperationExceptionCustom($"Cannot remove Book {bookId}: Book is currently on loan.");
             }
         }
 
-        return _listBooks.TryRemove(bookId, out _);
+        _listBooks.TryRemove(bookId, out _);
     }
+}
+
+public class EntityNotFoundException : Exception
+{
+    public EntityNotFoundException(string message) : base(message) { }
+}
+
+public class BookUnavailableException : Exception
+{
+    public BookUnavailableException(string message) : base(message) { }
+}
+
+public class LimitExceededException : Exception
+{
+    public LimitExceededException(string message) : base(message) { }
+}
+
+public class InvalidOperationExceptionCustom : Exception
+{
+    public InvalidOperationExceptionCustom(string message) : base(message) { }
 }

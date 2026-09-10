@@ -10,6 +10,12 @@
 
         public static void ApplyPenalty (Member member, Loan loan)
         {
+            if (member == null)
+                throw new ArgumentNullException(nameof(member), "Member cannot be null when calculating penalties.");
+
+            if (loan == null)
+                throw new ArgumentNullException(nameof(loan), "Loan cannot be null when calculating penalties.");
+
             int loanDaysDuration = (DateTime.Now - loan.LoanStartDate).Days;
             int maxAllowedDays = member.isStudent
                 ? StudentMaxDaysLoanDuration

@@ -54,37 +54,33 @@ namespace LibraryTests
         }
 
         [Test]
-        public void MakeLoan_ShouldFail_WhenBookHasNoCopiesAvailable()
+        public void MakeLoan_ShouldThrowBookUnavailableException_WhenBookHasNoCopiesAvailable()
         {
             var member = _libraryManager.AddMember(isStudent: false);
             var book = _libraryManager.AddBook("Lord of the Rings", "John Ronald Reuel Tolkien", 0);
 
-            var loan = _libraryManager.MakeLoan(book.BookId, member.MemberId);
-
-            Assert.That(loan, Is.Null);
+            Assert.Throws<BookUnavailableException>(new Action(() => _libraryManager.MakeLoan(book.BookId, member.MemberId)));
         }
 
         [Test]
         public void MakeLoan_ShouldEnforceMaxLoansLimit_ForStandardAndStudentMembers()
         {
-            var standardMember = _libraryManager.AddMember(isStudent: false);// Limit: 3
-            var studentMember = _libraryManager.AddMember(isStudent: true);// Limit: 5
+            var standardMember = _libraryManager.AddMember(isStudent: false); // Limit:3
+            var studentMember = _libraryManager.AddMember(isStudent: true);   // Limit:5
 
             var book = _libraryManager.AddBook("A Song of Ice and Fire", "George R. R. Martin", 10);
 
-            //Standard Member
             for (int i = 0; i < LibraryManager.StandardMaxLoans; i++)
             {
-                Assert.That(_libraryManager.MakeLoan(book.BookId, standardMember.MemberId), Is.Not.Null);
+                _libraryManager.MakeLoan(book.BookId, standardMember.MemberId);
             }
-            Assert.That(_libraryManager.MakeLoan(book.BookId, standardMember.MemberId), Is.Null);
+            Assert.Throws<LimitExceededException>(new Action(() => _libraryManager.MakeLoan(book.BookId, standardMember.MemberId)));
 
-            //Student Member
             for (int i = 0; i < LibraryManager.StudentMaxLoans; i++)
             {
-                Assert.That(_libraryManager.MakeLoan(book.BookId, studentMember.MemberId), Is.Not.Null);
+                _libraryManager.MakeLoan(book.BookId, studentMember.MemberId);
             }
-            Assert.That(_libraryManager.MakeLoan(book.BookId, studentMember.MemberId), Is.Null);
+            Assert.Throws<LimitExceededException>(new Action(() => _libraryManager.MakeLoan(book.BookId, studentMember.MemberId)));
         }
 
         [Test]
@@ -95,10 +91,10 @@ namespace LibraryTests
 
             for (int i = 0; i < LibraryManager.StandardMaxLoans; i++)
             {
-                Assert.That(_libraryManager.MakeLoan(book.BookId, member.MemberId), Is.Not.Null);
+                _libraryManager.MakeLoan(book.BookId, member.MemberId);
             }
 
-            Assert.That(_libraryManager.MakeLoan(book.BookId, member.MemberId), Is.Null);
+            Assert.Throws<LimitExceededException>(new Action(() => _libraryManager.MakeLoan(book.BookId, member.MemberId)));
         }
 
         [Test]
@@ -109,10 +105,10 @@ namespace LibraryTests
 
             for (int i = 0; i < LibraryManager.StudentMaxLoans; i++)
             {
-                Assert.That(_libraryManager.MakeLoan(book.BookId, member.MemberId), Is.Not.Null);
+                _libraryManager.MakeLoan(book.BookId, member.MemberId);
             }
 
-            Assert.That(_libraryManager.MakeLoan(book.BookId, member.MemberId), Is.Null);
+            Assert.Throws<LimitExceededException>(new Action(() => _libraryManager.MakeLoan(book.BookId, member.MemberId)));
         }
 
         [Test]
@@ -124,9 +120,8 @@ namespace LibraryTests
             var loan = _libraryManager.MakeLoan(book.BookId, member.MemberId);
             Assert.That(book.NumberOfCopiesAvailable, Is.EqualTo(0));
 
-            bool success = _libraryManager.ReturnLoan(loan.LoanId);
+            _libraryManager.ReturnLoan(loan.LoanId);
 
-            Assert.That(success, Is.True);
             Assert.That(book.NumberOfCopiesAvailable, Is.EqualTo(1));
         }
 
@@ -141,8 +136,7 @@ namespace LibraryTests
             Assert.That(loan1, Is.Not.Null);
             Assert.That(book.NumberOfCopiesAvailable, Is.EqualTo(0));
 
-            var loan2 = _libraryManager.MakeLoan(book.BookId, member2.MemberId);
-            Assert.That(loan2, Is.Null);
+            Assert.Throws<BookUnavailableException>(new Action(() => _libraryManager.MakeLoan(book.BookId, member2.MemberId)));
         }
 
         [Test]
@@ -212,61 +206,53 @@ namespace LibraryTests
         }
 
         [Test]
-        public void ApplyPenalty_ExceedMaxCapThreshold()
-        {
-            var member = new Member(1, isStudent: false, balance: 0.0m);
-            int exactDaysToCap = PenaltyManager.StandardMaxDaysLoanDuration + 100;
-            var loan = new Loan(1, DateTime.Now.AddDays(-exactDaysToCap), member.MemberId, 100);
-
-            PenaltyManager.ApplyPenalty(member, loan);
-
-            // loan duration 100 days, 89 overdue
-            Assert.That(member.Balance, Is.EqualTo(-PenaltyManager.PenaltyMax).Within(0.001m));
-        }
-
-        [Test]
         public void ApplyPenalty_ExceedingMaxCapThreshold_DoesNotExceedCap()
         {
             var member = new Member(1, isStudent: false, balance: 0.0m);
-            // 500 days ago (Far exceeds cap limit)
             var loan = new Loan(1, DateTime.Now.AddDays(-500), member.MemberId, 100);
 
             PenaltyManager.ApplyPenalty(member, loan);
 
-            // Boundary test: Max Penalty Cap constraint
+            // 500 days overdue = max penalty
             Assert.That(member.Balance, Is.EqualTo(-PenaltyManager.PenaltyMax));
         }
 
 
         [Test]
-        public void RemoveMember_ShouldFail_IfMemberHasActiveLoansOrBalance()
+        public void RemoveMember_ShouldThrow_IfMemberHasActiveLoansOrBalance()
         {
             var member = _libraryManager.AddMember(isStudent: false, initialBalance: 5.0m);
             var book = _libraryManager.AddBook("The Stormlight Archive", "Brandon Sanderson", 2);
 
-            Assert.That(_libraryManager.RemoveMember(member.MemberId), Is.False);
+            // Fails due to positive balance
+            Assert.Throws<InvalidOperationExceptionCustom>(new Action(() => _libraryManager.RemoveMember(member.MemberId)));
 
             member.Balance = 0;
 
             var loan = _libraryManager.MakeLoan(book.BookId, member.MemberId);
-            Assert.That(_libraryManager.RemoveMember(member.MemberId), Is.False);
 
+            // Fails due to active loan
+            Assert.Throws<InvalidOperationExceptionCustom>(new Action(() => _libraryManager.RemoveMember(member.MemberId)));
+
+            // Succeeds after loan return
             _libraryManager.ReturnLoan(loan.LoanId);
-            Assert.That(_libraryManager.RemoveMember(member.MemberId), Is.True);
+            Assert.DoesNotThrow(new Action(() => _libraryManager.RemoveMember(member.MemberId)));
         }
 
         [Test]
-        public void RemoveBook_ShouldFail_IfBookIsCurrentlyOnLoan()
+        public void RemoveBook_ShouldThrow_IfBookIsCurrentlyOnLoan()
         {
             var member = _libraryManager.AddMember(isStudent: false);
             var book = _libraryManager.AddBook("Steelborn", "Taylor J. LaRue", 2);
 
             var loan = _libraryManager.MakeLoan(book.BookId, member.MemberId);
 
-            Assert.That(_libraryManager.RemoveBook(book.BookId), Is.False);
+            // Fails because copies are out on loan
+            Assert.Throws<InvalidOperationExceptionCustom>(new Action(() => _libraryManager.RemoveBook(book.BookId)));
 
+            // Succeeds after loan return
             _libraryManager.ReturnLoan(loan.LoanId);
-            Assert.That(_libraryManager.RemoveBook(book.BookId), Is.True);
+            Assert.DoesNotThrow(new Action(() => _libraryManager.RemoveBook(book.BookId)));
         }
 
         [Test]
@@ -279,15 +265,190 @@ namespace LibraryTests
 
             Loan loan1 = null;
             Loan loan2 = null;
+            int exceptionCount = 0;
 
             Parallel.Invoke(
-                () => loan1 = _libraryManager.MakeLoan(book.BookId, m1.MemberId),
-                () => loan2 = _libraryManager.MakeLoan(book.BookId, m2.MemberId)
+                () =>
+                {
+                    try
+                    {
+                        loan1 = _libraryManager.MakeLoan(book.BookId, m1.MemberId);
+                    }
+                    catch (BookUnavailableException)
+                    {
+                        Interlocked.Increment(ref exceptionCount);
+                    }
+                },
+                () =>
+                {
+                    try
+                    {
+                        loan2 = _libraryManager.MakeLoan(book.BookId, m2.MemberId);
+                    }
+                    catch (BookUnavailableException)
+                    {
+                        Interlocked.Increment(ref exceptionCount);
+                    }
+                }
             );
 
+            // Exactly one thread succeeded in creating a loan
             bool onlyOneLoanCreated = (loan1 != null && loan2 == null) || (loan1 == null && loan2 != null);
             Assert.That(onlyOneLoanCreated, Is.True);
+
+            Assert.That(exceptionCount, Is.EqualTo(1));
+
             Assert.That(book.NumberOfCopiesAvailable, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void MakeLoan_ShouldThrowEntityNotFoundException_WhenMemberDoesNotExist()
+        {
+            var book = _libraryManager.AddBook("Steelborn", "Taylor J. LaRue", 2);
+            int invalidMemberId = 9999;
+
+            Assert.Throws<EntityNotFoundException>(new Action(() => _libraryManager.MakeLoan(book.BookId, invalidMemberId)));
+
+            Assert.That(book.NumberOfCopiesAvailable, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void GetLoans_ShouldReturnEmptyList_WhenMemberDoesNotExist()
+        {
+            int invalidMemberId = 9999;
+
+            var loans = _libraryManager.GetLoans(invalidMemberId);
+
+            Assert.That(loans, Is.Not.Null);
+            Assert.That(loans, Is.Empty);
+        }
+
+        [Test]
+        public void GetBalance_ShouldReturnZero_WhenMemberDoesNotExist()
+        {
+            int invalidMemberId = 9999;
+
+            decimal balance = _libraryManager.GetBalance(invalidMemberId);
+
+            Assert.That(balance, Is.EqualTo(0.0));
+        }
+
+        [Test]
+        public void RemoveMember_ShouldThrowEntityNotFoundException_WhenMemberDoesNotExist()
+        {
+            int invalidMemberId = 9999;
+
+            Assert.Throws<EntityNotFoundException>(new Action(() => _libraryManager.RemoveMember(invalidMemberId)));
+        }
+
+        [Test]
+        public void MakeLoan_ShouldThrowEntityNotFoundException_WhenBookDoesNotExist()
+        {
+            var member = _libraryManager.AddMember(isStudent: false);
+            int invalidBookId = 8888;
+
+            Assert.Throws<EntityNotFoundException>(new Action(() => _libraryManager.MakeLoan(invalidBookId, member.MemberId)));
+
+            Assert.That(_libraryManager.GetLoans(member.MemberId), Is.Empty);
+        }
+
+        [Test]
+        public void RemoveBook_ShouldThrowEntityNotFoundException_WhenBookDoesNotExist()
+        {
+            int invalidBookId = 8888;
+
+            Assert.Throws<EntityNotFoundException>(new Action(() => _libraryManager.RemoveBook(invalidBookId)));
+        }
+
+        [Test]
+        public void ReturnLoan_ShouldThrowEntityNotFoundException_WhenLoanIdDoesNotExist()
+        {
+            int invalidLoanId = 7777;
+
+            Assert.Throws<EntityNotFoundException>(new Action(() => _libraryManager.ReturnLoan(invalidLoanId)));
+        }
+
+        [Test]
+        public void ReturnLoan_ShouldThrow_WhenReturningSameLoanIdTwice()
+        {
+            var member = _libraryManager.AddMember(isStudent: false);
+            var book = _libraryManager.AddBook("Steelborn", "Taylor J. LaRue", 1);
+            var loan = _libraryManager.MakeLoan(book.BookId, member.MemberId);
+
+            Assert.DoesNotThrow(new Action(() => _libraryManager.ReturnLoan(loan.LoanId)));
+
+            Assert.Throws<EntityNotFoundException>(new Action(() => _libraryManager.ReturnLoan(loan.LoanId)));
+
+            Assert.That(book.NumberOfCopiesAvailable, Is.EqualTo(1));
+        }
+
+
+        [Test]
+        public void MakeLoan_ShouldThrowEntityNotFoundException_WhenBothBookAndMemberDoNotExist()
+        {
+            int invalidBookId = 8888;
+            int invalidMemberId = 9999;
+
+            Assert.Throws<EntityNotFoundException>(new Action(() => _libraryManager.MakeLoan(invalidBookId, invalidMemberId)));
+        }
+
+        [Test]
+        public void MakeLoan_ThrowsEntityNotFoundException_WhenMemberDoesNotExist()
+        {
+            var book = _libraryManager.AddBook("A Song of Ice and Fire", "George R. R. Martin", 2);
+
+            Assert.Throws<EntityNotFoundException>(new Action(() => _libraryManager.MakeLoan(book.BookId, memberId: 999)));
+        }
+
+        [Test]
+        public void MakeLoan_ThrowsBookUnavailableException_WhenCopiesAreZero()
+        {
+            var member = _libraryManager.AddMember(isStudent: false);
+            var book = _libraryManager.AddBook("A Song of Ice and Fire", "George R. R. Martin", 0);
+
+            Assert.Throws<BookUnavailableException>(new Action(() => _libraryManager.MakeLoan(book.BookId, member.MemberId)));
+        }
+
+        [Test]
+        public void ReturnLoan_ThrowsEntityNotFoundException_WhenLoanDoesNotExist()
+        {
+            Assert.Throws<EntityNotFoundException>(new Action(() => _libraryManager.ReturnLoan(loanId: 888)));
+        }
+
+        [Test]
+        public void RemoveMember_ThrowsInvalidOperationException_WhenMemberHasActiveLoan()
+        {
+            var member = _libraryManager.AddMember(isStudent: false);
+            var book = _libraryManager.AddBook("A Song of Ice and Fire", "George R. R. Martin", 2);
+
+            var loan = _libraryManager.MakeLoan(book.BookId, member.MemberId);
+
+            Assert.Throws<InvalidOperationExceptionCustom>(new Action(() => _libraryManager.RemoveMember(member.MemberId)));
+        }
+
+        [Test]
+        public void Book_Constructor_ThrowsArgumentException_WhenTitleOrAuthorIsEmpty()
+        {
+            Assert.Throws<ArgumentException>(new Action(() => new Book(1, "", "Valid Author", 2)));
+            Assert.Throws<ArgumentException>(new Action(() => new Book(1, "Valid Title", "   ", 2)));
+        }
+
+        [Test]
+        public void Book_NumberOfCopiesAvailable_ThrowsArgumentOutOfRangeException_WhenSetToNegative()
+        {
+            var book = new Book(1, "A Song of Ice and Fire", "George R. R. Martin", 2);
+
+            Assert.Throws<ArgumentOutOfRangeException>(new Action(() => book.NumberOfCopiesAvailable = -1));
+        }
+
+        [Test]
+        public void PenaltyManager_ApplyPenalty_ThrowsArgumentNullException_WhenMemberOrLoanIsNull()
+        {
+            var member = new Member(1, isStudent: false, balance: 0.0m);
+            var loan = new Loan(1, DateTime.Now.AddDays(-30), memberId: 1, bookId: 10);
+
+            Assert.Throws<ArgumentNullException>(new Action(() => PenaltyManager.ApplyPenalty(null, loan)));
+            Assert.Throws<ArgumentNullException>(new Action(() => PenaltyManager.ApplyPenalty(member, null)));
         }
     }
 }

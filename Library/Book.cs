@@ -5,14 +5,34 @@
         public int BookId { get; set; }
         public string Title { get; set; }
         public string Author { get; set; }
-        public int NumberOfCopiesAvailable { get; set; }
 
-        public Book(int BookId, string Title, string Author, int NumberOfCopiesAvailable)
+        private int _numberOfCopiesAvailable;
+        public int NumberOfCopiesAvailable
         {
-            this.BookId = BookId;
-            this.Title = Title;
-            this.Author = Author;
-            this.NumberOfCopiesAvailable = NumberOfCopiesAvailable;
+            get => _numberOfCopiesAvailable;
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException(nameof(value), "Copies available cannot be negative.");
+                _numberOfCopiesAvailable = value;
+            }
+        }
+
+        public Book(int bookId, string title, string author, int numberOfCopiesAvailable)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                throw new ArgumentException("Title cannot be empty.", nameof(title));
+
+            if (string.IsNullOrWhiteSpace(title))
+                throw new ArgumentException("Title cannot be empty or consist only of whitespace.", nameof(title));
+
+            if (string.IsNullOrWhiteSpace(author))
+                throw new ArgumentException("Author cannot be empty or consist only of whitespace.", nameof(author));
+
+            BookId = bookId;
+            Title = title;
+            Author = author;
+            NumberOfCopiesAvailable = numberOfCopiesAvailable;
         }
     }
 }
