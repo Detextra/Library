@@ -12,7 +12,7 @@ public class LibraryManager
     public const int StudentMaxLoans = 5;
     public const int StandardMaxLoans = 3;
 
-    public Loan? MakeLoan(int bookId, int memberId)
+    public Loan MakeLoan(int bookId, int memberId)
     {
         if (!_listMembers.TryGetValue(memberId, out var member))
         {
