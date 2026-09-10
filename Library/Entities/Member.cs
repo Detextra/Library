@@ -1,4 +1,4 @@
-﻿namespace Library
+﻿namespace Library.Entities
 {
     public class Member
     {
@@ -6,11 +6,11 @@
         public bool isStudent { get; set; }
         public decimal Balance { get; set; }
 
-        public Member (int MemberId, bool isStudent, decimal balance)
+        public Member(int MemberId, bool isStudent, decimal balance)
         {
             this.MemberId = MemberId;
             this.isStudent = isStudent;
-            this.Balance = balance;
+            Balance = balance;
         }
 
     }

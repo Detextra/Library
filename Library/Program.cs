@@ -4,9 +4,9 @@
     {
         static void Main(string[] args)
         {
-            LibraryManager libraryEngine = new LibraryManager();
+            //LibraryManager libraryEngine = new LibraryManager();
 
-            libraryEngine.AddMember(true); // Student Member
+            //libraryEngine.AddMember(true); // Student Member
             
             
         }

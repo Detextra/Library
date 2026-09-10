@@ -1,4 +1,6 @@
 using Library;
+using Library.Entities;
+using Library.IRepository;
 
 namespace LibraryTests
 {
@@ -10,7 +12,11 @@ namespace LibraryTests
         [SetUp]
         public void Setup()
         {
-            _libraryManager = new LibraryManager();
+            _libraryManager = new LibraryManager(
+                new InMemoryBookRepository(),
+                new InMemoryMemberRepository(),
+                new InMemoryLoanRepository()
+            );
         }
 
         [Test]

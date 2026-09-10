@@ -1,4 +1,6 @@
-﻿namespace Library
+﻿using Library.Entities;
+
+namespace Library
 {
     public static class PenaltyManager
     {
