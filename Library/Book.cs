@@ -21,9 +21,6 @@
         public Book(int bookId, string title, string author, int numberOfCopiesAvailable)
         {
             if (string.IsNullOrWhiteSpace(title))
-                throw new ArgumentException("Title cannot be empty.", nameof(title));
-
-            if (string.IsNullOrWhiteSpace(title))
                 throw new ArgumentException("Title cannot be empty or consist only of whitespace.", nameof(title));
 
             if (string.IsNullOrWhiteSpace(author))

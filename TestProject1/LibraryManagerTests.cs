@@ -162,7 +162,7 @@ namespace LibraryTests
             var member = _libraryManager.AddMember(isStudent: false, initialBalance: 5.0m);
             var book = _libraryManager.AddBook("The Stormlight Archive", "Brandon Sanderson", 2);
 
-            // Fails due to positive balance
+            // Fails due to positive balance (not 0)
             Assert.Throws<InvalidOperationExceptionCustom>(new Action(() => _libraryManager.RemoveMember(member.MemberId)));
 
             member.Balance = 0;

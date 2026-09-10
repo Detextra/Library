@@ -16,7 +16,7 @@
             if (loan == null)
                 throw new ArgumentNullException(nameof(loan), "Loan cannot be null when calculating penalties.");
 
-            int loanDaysDuration = (DateTime.Now - loan.LoanStartDate).Days;
+            int loanDaysDuration = (int)(DateTime.Now - loan.LoanStartDate).TotalDays;
             int maxAllowedDays = member.isStudent
                 ? StudentMaxDaysLoanDuration
                 : StandardMaxDaysLoanDuration;

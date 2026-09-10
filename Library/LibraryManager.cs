@@ -123,9 +123,9 @@ public class LibraryManager
 
         lock (member)
         {
-            if (member.Balance > 0)
+            if (member.Balance != 0)
             {
-                throw new InvalidOperationExceptionCustom($"Cannot remove Member {memberId}: Member has an outstanding balance of {member.Balance:C}.");
+                throw new InvalidOperationExceptionCustom($"Cannot remove Member {memberId}: Member has a balance of {member.Balance:C}.");
             }
         }
 
