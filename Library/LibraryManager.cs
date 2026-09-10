@@ -78,15 +78,9 @@ public class LibraryManager
 
     public List<Loan> GetLoans (int memberId)
     {
-        List<Loan> loans = new List<Loan>();
-        foreach (Loan n in _listLoans.Values)
-        {
-            if (n.MemberId == memberId)
-            {
-                loans.Add(n);
-            }
-        }
-        return loans;
+        return _listLoans.Values
+        .Where(loan => loan.MemberId == memberId)
+        .ToList();
     }
 
     public decimal GetBalance(int memberId)
@@ -142,20 +136,23 @@ public class LibraryManager
 
     public void RemoveBook(int bookId)
     {
-        if (!_listBooks.ContainsKey(bookId))
+        if (!_listBooks.TryGetValue(bookId, out var book))
         {
             throw new EntityNotFoundException($"Book with ID {bookId} was not found.");
         }
 
-        foreach (Loan loan in _listLoans.Values)
+        lock (book)
         {
-            if (loan.BookId == bookId)
+            // Check if any active loans exist for this book
+            bool isCurrentlyOnLoan = _listLoans.Values.Any(loan => loan.BookId == bookId);
+            if (isCurrentlyOnLoan)
             {
                 throw new InvalidOperationExceptionCustom($"Cannot remove Book {bookId}: Book is currently on loan.");
             }
-        }
 
-        _listBooks.TryRemove(bookId, out _);
+            // Attempt thread-safe removal from the dictionary
+            _listBooks.TryRemove(bookId, out _);
+        }
     }
 }
 
