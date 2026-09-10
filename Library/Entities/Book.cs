@@ -23,9 +23,6 @@
             if (string.IsNullOrWhiteSpace(title))
                 throw new ArgumentException("Title cannot be empty or consist only of whitespace.", nameof(title));
 
-            if (string.IsNullOrWhiteSpace(author))
-                throw new ArgumentException("Author cannot be empty or consist only of whitespace.", nameof(author));
-
             BookId = bookId;
             Title = title;
             Author = author;

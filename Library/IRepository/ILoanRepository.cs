@@ -25,7 +25,7 @@ namespace Library.IRepository
         public Loan Add(DateTime loanDate, int memberId, int bookId)
         {
             int id = Interlocked.Increment(ref _nextId);
-            Loan loan = new Loan(id, loanDate, memberId, bookId);
+            Loan loan = new Loan(id, memberId, bookId, loanDate);
             _loans.TryAdd(id, loan);
             return loan;
         }

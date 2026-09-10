@@ -16,7 +16,7 @@ namespace LibraryTests
         public void ApplyPenalty_StandardMember_OnExactDueDate_HasZeroPenalty()
         {
             var member = new Member(1, isStudent: false, balance: 0.0m);
-            var loan = new Loan(1, DateTime.Now.AddDays(-PenaltyService.StandardMaxDaysLoanDuration), member.MemberId, 100);
+            var loan = new Loan(1, member.MemberId, 100, DateTime.Now.AddDays(-PenaltyService.StandardMaxDaysLoanDuration));
 
             PenaltyService.ApplyPenalty(member, loan);
 
@@ -29,7 +29,7 @@ namespace LibraryTests
         public void ApplyPenalty_StandardMember_OneDayOverdue_AppliesSingleDayPenalty()
         {
             var member = new Member(1, isStudent: false, balance: 0.0m);
-            var loan = new Loan(1, DateTime.Now.AddDays(-(PenaltyService.StandardMaxDaysLoanDuration + 1)), member.MemberId, 100);
+            var loan = new Loan(1, member.MemberId, 100, DateTime.Now.AddDays(-(PenaltyService.StandardMaxDaysLoanDuration + 1)));
 
             PenaltyService.ApplyPenalty(member, loan);
 
@@ -41,7 +41,7 @@ namespace LibraryTests
         public void ApplyPenalty_StudentMember_OnExactDueDate_HasZeroPenalty()
         {
             var member = new Member(1, isStudent: true, balance: 0.0m);
-            var loan = new Loan(1, DateTime.Now.AddDays(-PenaltyService.StudentMaxDaysLoanDuration), member.MemberId, 100);
+            var loan = new Loan(1, member.MemberId, 100, DateTime.Now.AddDays(-PenaltyService.StudentMaxDaysLoanDuration));
 
             PenaltyService.ApplyPenalty(member, loan);
 
@@ -54,7 +54,7 @@ namespace LibraryTests
         {
             var member = new Member(1, isStudent: false, balance: 0.0m);
             int exactDaysToCap = PenaltyService.StandardMaxDaysLoanDuration + 50;
-            var loan = new Loan(1, DateTime.Now.AddDays(-exactDaysToCap), member.MemberId, 100);
+            var loan = new Loan(1, member.MemberId, 100, DateTime.Now.AddDays(-exactDaysToCap));
 
             PenaltyService.ApplyPenalty(member, loan);
 
@@ -66,7 +66,7 @@ namespace LibraryTests
         public void ApplyPenalty_ExceedingMaxCapThreshold_DoesNotExceedCap()
         {
             var member = new Member(1, isStudent: false, balance: 0.0m);
-            var loan = new Loan(1, DateTime.Now.AddDays(-500), member.MemberId, 100);
+            var loan = new Loan(1, member.MemberId, 100, DateTime.Now.AddDays(-500));
 
             PenaltyService.ApplyPenalty(member, loan);
 
@@ -78,7 +78,7 @@ namespace LibraryTests
         public void PenaltyManager_ApplyPenalty_ThrowsArgumentNullException_WhenMemberOrLoanIsNull()
         {
             var member = new Member(1, isStudent: false, balance: 0.0m);
-            var loan = new Loan(1, DateTime.Now.AddDays(-30), memberId: 1, bookId: 10);
+            var loan = new Loan(1, memberId: 1, bookId: 10, DateTime.Now.AddDays(-30));
 
             Assert.Throws<ArgumentNullException>(new Action(() => PenaltyService.ApplyPenalty(null, loan)));
             Assert.Throws<ArgumentNullException>(new Action(() => PenaltyService.ApplyPenalty(member, null)));
