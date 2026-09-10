@@ -2,7 +2,7 @@
 
 namespace Library
 {
-    public static class PenaltyManager
+    public static class PenaltyService
     {
         public const int StudentMaxDaysLoanDuration = 28;
         public const int StandardMaxDaysLoanDuration = 21;

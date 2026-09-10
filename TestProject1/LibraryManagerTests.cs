@@ -7,12 +7,12 @@ namespace LibraryTests
     [TestFixture]
     public class LibraryManagerTests
     {
-        private LibraryManager _libraryManager;
+        private LibraryService _libraryManager;
 
         [SetUp]
         public void Setup()
         {
-            _libraryManager = new LibraryManager(
+            _libraryManager = new LibraryService(
                 new InMemoryBookRepository(),
                 new InMemoryMemberRepository(),
                 new InMemoryLoanRepository()
@@ -75,13 +75,13 @@ namespace LibraryTests
 
             var book = _libraryManager.AddBook("A Song of Ice and Fire", "George R. R. Martin", 10);
 
-            for (int i = 0; i < LibraryManager.StandardMaxLoans; i++)
+            for (int i = 0; i < LibraryService.StandardMaxLoans; i++)
             {
                 _libraryManager.MakeLoan(book.BookId, standardMember.MemberId);
             }
             Assert.Throws<LimitExceededException>(new Action(() => _libraryManager.MakeLoan(book.BookId, standardMember.MemberId)));
 
-            for (int i = 0; i < LibraryManager.StudentMaxLoans; i++)
+            for (int i = 0; i < LibraryService.StudentMaxLoans; i++)
             {
                 _libraryManager.MakeLoan(book.BookId, studentMember.MemberId);
             }
@@ -94,7 +94,7 @@ namespace LibraryTests
             var member = _libraryManager.AddMember(isStudent: false); // Max 3 loans
             var book = _libraryManager.AddBook("Test Book", "Author", 10);
 
-            for (int i = 0; i < LibraryManager.StandardMaxLoans; i++)
+            for (int i = 0; i < LibraryService.StandardMaxLoans; i++)
             {
                 _libraryManager.MakeLoan(book.BookId, member.MemberId);
             }
@@ -108,7 +108,7 @@ namespace LibraryTests
             var member = _libraryManager.AddMember(isStudent: true); // Max 5 loans
             var book = _libraryManager.AddBook("Test Book", "Author", 10);
 
-            for (int i = 0; i < LibraryManager.StudentMaxLoans; i++)
+            for (int i = 0; i < LibraryService.StudentMaxLoans; i++)
             {
                 _libraryManager.MakeLoan(book.BookId, member.MemberId);
             }
