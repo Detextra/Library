@@ -20,7 +20,7 @@ public class LibraryManager
             return null;
         }
 
-        int maxAllowedLoans = member.IsMemberStudent ? StudentMaxLoans : StandardMaxLoans;
+        int maxAllowedLoans = member.isStudent ? StudentMaxLoans : StandardMaxLoans;
         if (GetLoans(memberId).Count >= maxAllowedLoans)
         {
             return null;
