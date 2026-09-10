@@ -4,15 +4,6 @@ using Library.IRepository;
 using System.Collections.Concurrent;
 public class LibraryService
 {
-    private static readonly Lazy<LibraryService> _instance =
-        new Lazy<LibraryService>(() => new LibraryService(
-            new InMemoryBookRepository(),
-            new InMemoryMemberRepository(),
-            new InMemoryLoanRepository()
-        ));
-
-    public static LibraryService Instance => _instance.Value;
-
     private readonly IBookRepository _bookRepository;
     private readonly IMemberRepository _memberRepository;
     private readonly ILoanRepository _loanRepository;
