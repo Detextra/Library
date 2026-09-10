@@ -5,8 +5,8 @@
         public const int StudentMaxDaysLoanDuration = 28;
         public const int StandardMaxDaysLoanDuration = 21;
 
-        public const double PenaltyPerDay = 0.2;
-        public const double PenaltyMax = 10;
+        public const decimal PenaltyPerDay = 0.2m;
+        public const decimal PenaltyMax = 10.0m;
 
         public PenaltyManager ()
         {
@@ -24,10 +24,8 @@
             if (penaltyDays <= 0) 
                 return; 
             lock (member) 
-            { 
-                member.Balance += penaltyDays * 0.20m;
-                if (member.Balance > 10)
-                    member.Balance = 10;
+            {
+                member.Balance -= Math.Min(penaltyDays * PenaltyPerDay, PenaltyMax);
             }
         }
     }

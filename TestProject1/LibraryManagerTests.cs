@@ -1,6 +1,3 @@
-using System.Threading.Tasks;
-using static Microsoft.Extensions.DependencyModel.Library;
-using NUnit.Framework;
 using Library;
 
 
@@ -119,7 +116,7 @@ namespace LibraryTests
 
             _libraryManager.ReturnLoan(loan.LoanId);
 
-            double expectedPenalty = 4 * 0.20;
+            double expectedPenalty = -4 * 0.20;
             Assert.That(_libraryManager.GetBalance(member.MemberId), Is.EqualTo(expectedPenalty).Within(0.001));
         }
 
